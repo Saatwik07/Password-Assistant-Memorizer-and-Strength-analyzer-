@@ -3,6 +3,10 @@ import random
 import secrets
 import string
 import hashlib
+import json
+import os
+
+DATA_FILE = os.path.join(os.path.dirname(__file__), "accounts.json")
 
 ANCHORS = [
     ("Blue umbrella in rain","Think about staying dry.","A traveler smiles as the rain falls."),
@@ -16,16 +20,33 @@ ANCHORS = [
     ("Red bicycle beside a lighthouse","Think about a safe journey.","A cyclist reaches the coast.")
 ]
 
-COMMON = ["password","admin","welcome","qwerty","123456","abc123"]
+COMMON = ["password","admin","welcome","qwerty","123456","abc123","123","abc"]
+
 
 def hash_password(p):
     return hashlib.sha256(p.encode()).hexdigest()
+
+def load_accounts():
+
+    if not os.path.exists(DATA_FILE):
+        return []
+
+    with open(DATA_FILE, "r") as file:
+        try:
+            return json.load(file)
+        except json.JSONDecodeError:
+            return []
+        
+def save_accounts(accounts):
+
+    with open(DATA_FILE, "w") as file:
+        json.dump(accounts, file, indent=4)
 
 
 COMMON_PASSWORDS = {
     "password", "123456", "123456789", "qwerty",
     "abc123", "password123", "admin",
-    "welcome", "letmein", "111111"
+    "welcome", "letmein", "111111", "123", "abc"
 }
 
 
@@ -164,22 +185,30 @@ def analyze_password(password):
         for issue in issues:
             print("-", issue)
 
-    print("\nRecommendations:")
+    recommendations = []
 
     if len(password) < 12:
-        print("- Use at least 12 characters")
+        recommendations.append("- Use at least 12 characters")
 
     if not any(c.isupper() for c in password):
-        print("- Add uppercase letters")
+        recommendations.append("- Add uppercase letters")
 
     if not any(c.islower() for c in password):
-        print("- Add lowercase letters")
+        recommendations.append("- Add lowercase letters")
 
     if not any(c.isdigit() for c in password):
-        print("- Add numbers")
+        recommendations.append("- Add numbers")
 
     if not any(c in string.punctuation for c in password):
-        print("- Add special characters")
+        recommendations.append("- Add special characters")
+
+    if recommendations:
+        print("Recommendations : ")
+        for rec in recommendations:
+            print(f" {rec}")
+
+    else:
+        print("Recommendations : NIL!")
 
 
 def generate_random_password(length=16):
@@ -308,7 +337,13 @@ def smart_leetspeak(word):
 
 
 def trainer():
-    print("\nChoose a Visual Anchor\n")
+    username = input("Username: ").strip()
+    website = input("Website/Application: ").strip()
+    if not username or not website:
+        print("Username and Website cannot be empty.")
+        return
+
+    print("\nChoose a Visual Anchor which will help you to recollect you password\n")
     idxs=random.sample(range(len(ANCHORS)),9)
     selected_list=[ANCHORS[i] for i in idxs]
     for i,(a,_,_) in enumerate(selected_list,1):
@@ -357,10 +392,10 @@ def trainer():
         print("""
     Password Requirements
 
-    ✔ At least 10 characters
-    ✔ At least 1 uppercase letter
-    ✔ At least 1 lowercase letter
-    ✔ At least 1 number
+    - At least 10 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 number
     """)
 
     elif level == "Strong":
@@ -368,11 +403,11 @@ def trainer():
         print("""
     Password Requirements
 
-    ✔ At least 12 characters
-    ✔ At least 1 uppercase letter
-    ✔ At least 1 lowercase letter
-    ✔ At least 1 number
-    ✔ At least 1 special character
+    - At least 12 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 1 number
+    - At least 1 special character
     """)
 
     elif level == "Very Strong":
@@ -380,28 +415,57 @@ def trainer():
         print("""
     Password Requirements
 
-    ✔ At least 14 characters
-    ✔ At least 1 uppercase letter
-    ✔ At least 1 lowercase letter
-    ✔ At least 2 numbers
-    ✔ At least 1 special character
+    - At least 14 characters
+    - At least 1 uppercase letter
+    - At least 1 lowercase letter
+    - At least 2 numbers
+    - At least 1 special character
     """)
+    print("\nMemory Hint:",hint)
+    print("Mnemonic Story:",story)
     while True:
-        pwd=input("\nCreate DUMMY password: ").strip()
+        
+        pwd=input("\nCreate password (Related to the Visual Anchor): ").strip()
         if pwd=="":
             print("Password cannot be empty.")
             continue
-        ok,score,issues=validate_password(pwd,level)
+        ok, score, issues = validate_password(pwd, level)
+
         if ok:
             print("\nPassword Accepted")
             analyze_password(pwd)
-            print("Score:",score)
-            print("\nMemory Hint:",hint)
-            print("Mnemonic Story:",story)
+            print("Score:", score)
             break
-        print("\nImprove Password:")
+
+        print("\nPassword does not meet the recommended requirements.")
+        print("\nSuggestions:")
         for x in issues:
-            print("-",x)
+            print("-", x)
+
+        while True:
+            choice = input(
+                "\nDo you want to:\n"
+                "1. Improve the password\n"
+                "2. Continue with this password anyway\n"
+                "Choice (1/2): "
+            ).strip()
+
+            if choice == "1":
+                # Go back and enter another password
+                break
+
+            elif choice == "2":
+                print("\nProceeding with your current password...")
+                analyze_password(pwd)
+                print("Score:", score)
+                ok = True
+                break
+
+            else:
+                print("Invalid choice.")
+
+        if ok:
+            break
     count=0
     while count<3:
         print(f"\nPractice {count+1}/3")
@@ -412,46 +476,156 @@ def trainer():
         else:
             count=0
             print("Incorrect. Counter reset.")
-    print("\nPassword locked into memory.")
-    stored_hash=hash_password(pwd)
-    print("Password will not be shown again.")
-    distractors = ANCHORS[:]
-    random.shuffle(distractors)
-    print("\nRecall Stage")
-    for i,(a,_,_) in enumerate(distractors,1):
-        print(f"{i}. {a}")
-    print("\nHint:",hint)
+    print("Now you can go ahead and use this password in the website/application\n" \
+    "Hope you will be able to recollect it easily!")
+    salt = secrets.token_hex(16)
+
+    stored_hash = hashlib.sha256(
+        (pwd + salt).encode()
+    ).hexdigest()
+
+    accounts = load_accounts()
+
+    account = {
+        "username": username,
+        "website": website,
+        "anchor": anchor,
+        "salt": salt,
+        "password_hash": stored_hash
+    }
+
+    accounts.append(account)
+
+    save_accounts(accounts)
+    
+  
+def recall():
+
+    accounts = load_accounts()
+
+    if len(accounts) == 0:
+        print("\nNo saved accounts.")
+        return
+
     while True:
-        try:
-            sel=int(input("Select anchor: "))
-            if 1<=sel<=len(distractors):
+
+        print("\n\nFollowing details are required : ")
+        print("(Type 'q' at any time to return to the menu)")
+
+        username = input("\nUsername: ").strip()
+
+        if username.lower() == "q":
+            print("\nReturning to menu...")
+            return
+
+        website = input("Website/Application: ").strip()
+
+        if website.lower() == "q":
+            print("\nReturning to menu...")
+            return
+
+        if not username or not website:
+            print("Username and Website cannot be empty.")
+            continue
+
+        account = None
+
+        for item in accounts:
+
+            if (
+                item["username"].strip().lower() ==
+                username.lower()
+                and
+                item["website"].strip().lower() ==
+                website.lower()
+            ):
+                account = item
                 break
+
+        if account:
+            print("\nAccount Found")
+            break
+        else:
+            print("No matching account details found.")
+            retry = input(
+                "Press Enter to try again or type 'q' to return to the menu: "
+            ).strip().lower()
+
+            if retry == "q":
+                print("\nReturning to menu...")
+                return
+
+    while True:
+
+        distractors = ANCHORS[:]
+        random.shuffle(distractors)
+
+        print("\nRecall Stage")
+
+        for i, (a, _, _) in enumerate(distractors, 1):
+            print(f"{i}. {a}")
+
+        while True:
+
+            try:
+
+                sel = int(input("Select Anchor: "))
+
+                if 1 <= sel <= len(distractors):
+                    break
+
+                print("Invalid choice.")
+
+            except ValueError:
+
+                print("Enter a number.")
+
+        entered = input("Enter Password: ").strip()
+
+        anchor_ok = (
+            distractors[sel - 1][0] ==
+            account["anchor"]
+        )
+
+        entered_hash = hashlib.sha256(
+            (entered + account["salt"]).encode()
+        ).hexdigest()
+
+        password_ok = (
+            entered_hash ==
+            account["password_hash"]
+        )
+
+        print("\n========== RESULT ==========")
+
+        if anchor_ok and password_ok:
+            print("Correct Anchor + Correct Password")
+            break
+
+        elif anchor_ok:
+            print("Correct Anchor + Wrong Password")
+
+        elif password_ok:
+            print("Wrong Anchor + Correct Password")
+
+        else:
+            print("Wrong Anchor + Wrong Password")
+
+        while True:
+            retry = input(
+                "\nPress Enter to try again or type 'q' to return to the menu: "
+            ).strip().lower()
+
+            if retry == "":
+                break          # Retry Recall Stage
+
+            elif retry == "q":
+                print("\nReturning to menu...")
+                return         # Exit recall()
+
             else:
-                print("Invalid anchor.")
-        except ValueError:
-            print("Numbers only.")
-          
-    entered=input("Enter password: ").strip()
-    anchor_ok=False
-    if 1<=sel<=len(distractors):
-        anchor_ok=(distractors[sel-1][0]==anchor)
-    pass_ok=(hash_password(entered)==stored_hash)
-    print("\nResult")
-    if anchor_ok and pass_ok:
-        print("Correct anchor + Correct password")
-    elif anchor_ok and not pass_ok:
-        print("Correct anchor + Wrong password")
-    elif (not anchor_ok) and pass_ok:
-        print("Wrong anchor + Correct password")
-    else:
-        print("Wrong anchor + Wrong password")
-    print("\nSummary:")
-    print("- Password renewal support")
-    print("- Visual memory anchor")
-    print("- Memorability practice")
-    print("- Non-revealing recall")
-    print("- Hash-only verification concept")
-    print("- Separation of memory aid from authentication")
+                print("Invalid input. Please press Enter or type 'q'.")
+
 
 def improve_password(password):
 
@@ -490,12 +664,18 @@ def main():
 
     while True:
 
-        print("\nThis is a beginner-level educational prototype. It does not store, transmit, or save passwords!\n\n===== PASSWORD STRENGTH AND MEMORABILITY ASSISTANT =====")
-        print("1. Analyze Password")
-        print("2. Generate Random Strong Password")
-        print("3. Visual Anchor Password Memoriser")
-        print("4. Improve Existing Password")
-        print("5. Exit")
+        print("___________________________________________________________________________")
+        print("\n****Disclaimer:This is a beginner-level prototype for educational purpose. " \
+        "\nIt does not store, transmit, or save passwords!****" \
+        "\n___________________________________________________________________________" \
+        "\n\n=============== PASSWORD STRENGTH AND MEMORABILITY ASSISTANT ==============")
+        print("\n1. Analyze Strength of any Password")
+        print("2. Generate a Random Password of Desired Strength(Computer generated)")
+        print("3. Improve Existing Password")
+        print("4. Generate Password with Visual Anchor and Recall Trainer")
+        print("5. Recall Password using Visual Anchor")
+        print("6. Exit")
+        print("___________________________________________________________________________")       
 
         choice = input("\nSelect Option: ")
 
@@ -521,23 +701,30 @@ def main():
             print(generated)
 
             analyze_password(generated)
-
+            
         elif choice == "3":
+
+            init_password = input("Enter Password: ")
+           
+            improved = improve_password(init_password)
+
+            print("\nInitial Password : ", init_password)
+            analyze_password(init_password)
+
+            if not strength_score(init_password) == 100:
+                
+                print("\nImproved Password : ", improved)
+                analyze_password(improved)
+            
+        elif choice == "4":
 
             trainer()
 
-        elif choice == "4":
-
-            password = input("Enter Password: ")
-
-            improved = improve_password(password)
-
-            print("\nImproved Password:")
-            print(improved)
-
-            analyze_password(improved)
-
         elif choice == "5":
+
+            recall()
+
+        elif choice == "6":
 
             print("Goodbye!")
             break
