@@ -1,0 +1,30 @@
+[
+    {
+        "username": "Saatwik",
+        "website": "Netflix",
+        "anchor": "White horse near a windmill",
+        "salt": "2c8ae8af1d33c26a6a246bbc47cbe4ee",
+        "password_hash": "626fc9fe6041507cd97d5eb6a8112edb5b2edafde181ec00aade7554b5cf93cf"
+    },
+    {
+        "username": "Nitu",
+        "website": "Amazon",
+        "anchor": "Yellow sunflower in a garden",
+        "salt": "b26325f72b63fa91d801a4c8472d37ac",
+        "password_hash": "02fea7ca19f1bcba1202a9dc095df02da96975a0efb92a6492899b6abc4fea7a"
+    },
+    {
+        "username": "saatwik",
+        "website": "google",
+        "anchor": "Silver owl on a snowy fence",
+        "salt": "b596fd041b562f486ca36bd8245b38c6",
+        "password_hash": "8511105752609bd9f67592a9352efbd5df2f51d17d8099752acbc1feeba1e2bd"
+    },
+    {
+        "username": "Saatwik Vaish",
+        "website": "Amazon",
+        "anchor": "Yellow sunflower in a garden",
+        "salt": "be6407a8e136c5410d11658b5304447c",
+        "password_hash": "5dd35bfacca3b636fe1dd2ce49f2e05fa3ebecd11ea451704717204566a31772"
+    }
+]
